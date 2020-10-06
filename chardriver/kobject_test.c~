@@ -1,0 +1,45 @@
+#include <linux/module.h>
+#include <linux/kernel.h>
+#include <linux/fs.h>
+#include <linux/init.h>
+#include <linux/slab.h>
+#include <linux/cdev.h>
+#include <linux/uaccess.h>
+#include <linux/device.h>
+
+static struct class *led_class;
+static dev_t dev_number;
+#define DEVICE_NAME "led"
+
+//Driver Initialization
+int led_init(void){
+	struct class_device *c_d;
+
+	//Dynamic allocation of the device number
+	if(alloc_chrdev_region(&dev_number, 0,1,DEVICE_NAME) < 0){
+		printk("can't register new device\n");
+	}
+
+	//Creates class file in /sys/class/Testingsysfsclass
+	led_class=class_create(THIS_MODULE, "TestingSysfsclass");
+	printk("the sysfs class is created\n");
+
+	//Creates Device file in /sys/class/Testingsysfsclass/led
+	device_create(led_class, NULL,dev_number, NULL, DEVICE_NAME);
+	return 0;
+}
+
+//Driver exit function
+void led_cleanup(void)
+{
+	device_destroy(led_class,dev_number);
+	class_destroy(led_class);
+	printk("the sysfs class is destroyed\n");
+	return;
+}
+
+module_init(led_init);
+module_exit(led_cleanup);
+
+MODULE_LICENSE("GPL v2");
+
